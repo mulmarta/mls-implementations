@@ -1,36 +1,60 @@
-{
-  "clients": [
-    "localhost:50001",
-    "localhost:50002",
-    "localhost:50003"
-  ],
-  "test_vectors": [
-    "tree_math",
-    "encryption",
-    "key_schedule",
-    "transcript",
-    "treekem",
-    "messages"
-  ],
-  "scripts": {
-    "two_party": [
-      {"action": "createGroup", "actor": "alice"},
-      {"action": "createKeyPackage", "actor": "bob"},
-      {"action": "addProposal", "actor": "alice", "keyPackage": 1},
-      {"action": "commit", "actor": "alice", "byReference": [2]},
-      {"action": "joinGroup", "actor": "bob", "welcome": 3},
-      {"action": "handleCommit", "actor": "alice", "byReference": [2], "commit": 3},
-      {"action": "verifyStateAuth"}
-    ],
-    "external_join": [
-      {"action": "createGroup", "actor": "alice"},
-      {"action": "publicGroupState", "actor": "alice"},
-      {"action": "externalJoin", "actor": "bob", "publicGroupState": 1},
-      {"action": "handleCommit", "actor": "alice", "commit": 2},
-      {"action": "verifyStateAuth"}
-    ],
-    "stateProperties": [
-      {"action": "stateProperties"}
-    ]
-  }
-}
+
+    {
+      "clients": [
+        "localhost:50003"
+      ],
+      "scripts": {
+        "script": [
+    {"action": "createGroup", "actor": "actor0"},
+{"action": "createKeyPackage", "actor": "actor1"},
+{"action": "addProposal", "actor": "actor0", "keyPackage": 1},
+{"action": "createKeyPackage", "actor": "actor2"},
+{"action": "addProposal", "actor": "actor0", "keyPackage": 3},
+{"action": "createKeyPackage", "actor": "actor3"},
+{"action": "addProposal", "actor": "actor0", "keyPackage": 5},
+{"action": "createKeyPackage", "actor": "actor4"},
+{"action": "addProposal", "actor": "actor0", "keyPackage": 7},
+{"action": "commit", "actor": "actor0", "byReference": []},
+{"action": "joinGroup", "actor": "actor1", "welcome": 9},
+{"action": "joinGroup", "actor": "actor2", "welcome": 9},
+{"action": "joinGroup", "actor": "actor3", "welcome": 9},
+{"action": "joinGroup", "actor": "actor4", "welcome": 9},
+{"action": "handleCommit", "actor": "actor0", "commit": 9},
+{"action": "commit", "actor": "actor0"},
+{"action": "handleCommit", "actor": "actor0", "commit": 15},
+{"action": "handleCommit", "actor": "actor1", "commit": 15},
+{"action": "handleCommit", "actor": "actor2", "commit": 15},
+{"action": "handleCommit", "actor": "actor3", "commit": 15},
+{"action": "handleCommit", "actor": "actor4", "commit": 15},
+{"action": "commit", "actor": "actor1"},
+{"action": "handleCommit", "actor": "actor0", "commit": 21},
+{"action": "handleCommit", "actor": "actor1", "commit": 21},
+{"action": "handleCommit", "actor": "actor2", "commit": 21},
+{"action": "handleCommit", "actor": "actor3", "commit": 21},
+{"action": "handleCommit", "actor": "actor4", "commit": 21},
+{"action": "commit", "actor": "actor2"},
+{"action": "handleCommit", "actor": "actor0", "commit": 27},
+{"action": "handleCommit", "actor": "actor1", "commit": 27},
+{"action": "handleCommit", "actor": "actor2", "commit": 27},
+{"action": "handleCommit", "actor": "actor3", "commit": 27},
+{"action": "handleCommit", "actor": "actor4", "commit": 27},
+{"action": "commit", "actor": "actor3"},
+{"action": "handleCommit", "actor": "actor0", "commit": 33},
+{"action": "handleCommit", "actor": "actor1", "commit": 33},
+{"action": "handleCommit", "actor": "actor2", "commit": 33},
+{"action": "handleCommit", "actor": "actor3", "commit": 33},
+{"action": "handleCommit", "actor": "actor4", "commit": 33},
+{"action": "commit", "actor": "actor4"},
+{"action": "handleCommit", "actor": "actor0", "commit": 39},
+{"action": "handleCommit", "actor": "actor1", "commit": 39},
+{"action": "handleCommit", "actor": "actor2", "commit": 39},
+{"action": "handleCommit", "actor": "actor3", "commit": 39},
+{"action": "handleCommit", "actor": "actor4", "commit": 39},
+{"action": "removeProposal", "actor": "actor2", "removedLeafIndex": 0},
+{"action": "removeProposal", "actor": "actor2", "removedLeafIndex": 1},
+{"action": "commit", "actor": "actor2"},
+{"action": "handleCommit", "actor": "actor2", "commit": 47}
+        ]
+      }
+    }
+    

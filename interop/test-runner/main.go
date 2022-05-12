@@ -28,6 +28,8 @@ const (
 	ActionExternalJoin         ScriptAction = "externalJoin"
 	ActionPublicGroupState     ScriptAction = "publicGroupState"
 	ActionAddProposal          ScriptAction = "addProposal"
+	ActionUpdateProposal       ScriptAction = "updateProposal"
+	ActionRemoveProposal       ScriptAction = "removeProposal"
 	ActionCommit               ScriptAction = "commit"
 	ActionHandleCommit         ScriptAction = "handleCommit"
 	ActionHandleExternalCommit ScriptAction = "handleExternalCommit"
@@ -54,6 +56,10 @@ type ExternalJoinStepParams struct {
 
 type AddProposalStepParams struct {
 	KeyPackage int `json:"keyPackage"`
+}
+
+type RemoveProposalStepParams struct {
+	RemovedLeafIndex uint32 `json:"removedLeafIndex"`
 }
 
 type CommitStepParams struct {
@@ -157,7 +163,7 @@ type Client struct {
 }
 
 func ctx() context.Context {
-	c, _ := context.WithTimeout(context.Background(), time.Second * 10)
+	c, _ := context.WithTimeout(context.Background(), time.Second*10)
 	return c
 }
 
@@ -398,7 +404,7 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		txID, ok := config.transactionID[step.Actor]
 		if !ok {
-			return fmt.Errorf("Malformed step: No transaction for %d", step.Actor)
+			return fmt.Errorf("Malformed step: No transaction for %s", step.Actor)
 		}
 
 		req := &pb.JoinGroupRequest{
@@ -475,6 +481,43 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.StoreMessage(index, "proposal", resp.Proposal)
 
+	case ActionRemoveProposal:
+		client := config.ActorClients[step.Actor]
+		var params RemoveProposalStepParams
+		err := json.Unmarshal(step.Raw, &params)
+
+		if err != nil {
+			return err
+		}
+
+		req := &pb.RemoveProposalRequest{
+			StateId:          config.stateID[step.Actor],
+			RemovedLeafIndex: params.RemovedLeafIndex,
+		}
+
+		resp, err := client.rpc.RemoveProposal(ctx(), req)
+
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "proposal", resp.Proposal)
+
+	case ActionUpdateProposal:
+		client := config.ActorClients[step.Actor]
+
+		req := &pb.UpdateProposalRequest{
+			StateId: config.stateID[step.Actor],
+		}
+
+		resp, err := client.rpc.UpdateProposal(ctx(), req)
+
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "proposal", resp.Proposal)
+
 	case ActionCommit:
 		client := config.ActorClients[step.Actor]
 		var params CommitStepParams
@@ -544,6 +587,14 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 		}
 
 		config.stateID[step.Actor] = resp.StateId
+
+		for i, leafNodeRef := range resp.Added {
+			config.StoreMessage(index, fmt.Sprintf("added %d", i), leafNodeRef)
+		}
+
+		for i, leafNodeRef := range resp.Removed {
+			config.StoreMessage(index, fmt.Sprintf("removed %d", i), leafNodeRef)
+		}
 
 	case ActionHandleExternalCommit:
 		client := config.ActorClients[step.Actor]
@@ -804,7 +855,20 @@ func (p *ClientPool) ScriptMatrix(actors []string) []ScriptActorConfig {
 	configSize := 2 * len(p.suiteSupport) * len(p.clients)
 
 	configs := make([]ScriptActorConfig, 0, configSize)
-	for suite, clients := range p.suiteSupport {
+	for _, combo := range combinations(len(p.clients), len(actors)) {
+		config := ScriptActorConfig{
+			CipherSuite:      1,
+			EncryptHandshake: false,
+			ActorClients:     map[string]*Client{},
+		}
+
+		for i := range actors {
+			config.ActorClients[actors[i]] = p.clients[combo[i]]
+		}
+
+		configs = append(configs, config)
+	}
+	/*for suite, clients := range p.suiteSupport {
 		for _, combo := range combinations(len(clients), len(actors)) {
 			for _, encrypt := range []bool{true, false} {
 				config := ScriptActorConfig{
@@ -820,7 +884,7 @@ func (p *ClientPool) ScriptMatrix(actors []string) []ScriptActorConfig {
 				configs = append(configs, config)
 			}
 		}
-	}
+	}*/
 
 	return configs
 }
@@ -860,6 +924,7 @@ func (p *ClientPool) RunScript(name string, script Script) ScriptResults {
 	actors := script.Actors()
 
 	configs := p.ScriptMatrix(actors)
+	fmt.Print(configs, "\n")
 	if name == ScriptStateProperties {
 		configs = p.AllClientsForEachSuite()
 	}

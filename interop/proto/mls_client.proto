@@ -209,7 +209,7 @@ message UpdateProposalRequest {
 // rpc RemoveProposal
 message RemoveProposalRequest {
   uint32 state_id = 1;
-  uint32 removed = 2;
+  uint32 removed_leaf_index = 2;
 }
 
 // rpc PSKProposal
@@ -251,6 +251,8 @@ message HandleCommitRequest {
 
 message HandleCommitResponse { 
   uint32 state_id = 1;
+  repeated bytes added = 2;
+  repeated bytes removed = 3;
 }
 
 // rpc HandleExternalCommit
