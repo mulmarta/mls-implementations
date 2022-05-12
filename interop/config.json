@@ -53,7 +53,7 @@
 {"action": "removeProposal", "actor": "actor2", "removedLeafIndex": 0},
 {"action": "removeProposal", "actor": "actor2", "removedLeafIndex": 1},
 {"action": "commit", "actor": "actor2"},
-{"action": "handleCommit", "actor": "actor1", "commit": 47}
+{"action": "handleCommit", "actor": "actor1", "commit": 47, "byReference": [45, 46]}
         ]
       }
     }
