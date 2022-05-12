@@ -49,6 +49,7 @@ type MLSClientClient interface {
 	AppAckProposal(ctx context.Context, in *AppAckProposalRequest, opts ...grpc.CallOption) (*ProposalResponse, error)
 	Commit(ctx context.Context, in *CommitRequest, opts ...grpc.CallOption) (*CommitResponse, error)
 	HandleCommit(ctx context.Context, in *HandleCommitRequest, opts ...grpc.CallOption) (*HandleCommitResponse, error)
+	HandlePendingCommit(ctx context.Context, in *HandlePendingCommitRequest, opts ...grpc.CallOption) (*HandlePendingCommitResponse, error)
 	HandleExternalCommit(ctx context.Context, in *HandleExternalCommitRequest, opts ...grpc.CallOption) (*HandleExternalCommitResponse, error)
 }
 
@@ -258,6 +259,15 @@ func (c *mLSClientClient) HandleCommit(ctx context.Context, in *HandleCommitRequ
 	return out, nil
 }
 
+func (c *mLSClientClient) HandlePendingCommit(ctx context.Context, in *HandlePendingCommitRequest, opts ...grpc.CallOption) (*HandlePendingCommitResponse, error) {
+	out := new(HandlePendingCommitResponse)
+	err := c.cc.Invoke(ctx, "/mls_client.MLSClient/HandlePendingCommit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mLSClientClient) HandleExternalCommit(ctx context.Context, in *HandleExternalCommitRequest, opts ...grpc.CallOption) (*HandleExternalCommitResponse, error) {
 	out := new(HandleExternalCommitResponse)
 	err := c.cc.Invoke(ctx, "/mls_client.MLSClient/HandleExternalCommit", in, out, opts...)
@@ -298,6 +308,7 @@ type MLSClientServer interface {
 	AppAckProposal(context.Context, *AppAckProposalRequest) (*ProposalResponse, error)
 	Commit(context.Context, *CommitRequest) (*CommitResponse, error)
 	HandleCommit(context.Context, *HandleCommitRequest) (*HandleCommitResponse, error)
+	HandlePendingCommit(context.Context, *HandlePendingCommitRequest) (*HandlePendingCommitResponse, error)
 	HandleExternalCommit(context.Context, *HandleExternalCommitRequest) (*HandleExternalCommitResponse, error)
 	mustEmbedUnimplementedMLSClientServer()
 }
@@ -371,6 +382,9 @@ func (UnimplementedMLSClientServer) Commit(context.Context, *CommitRequest) (*Co
 }
 func (UnimplementedMLSClientServer) HandleCommit(context.Context, *HandleCommitRequest) (*HandleCommitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleCommit not implemented")
+}
+func (UnimplementedMLSClientServer) HandlePendingCommit(context.Context, *HandlePendingCommitRequest) (*HandlePendingCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandlePendingCommit not implemented")
 }
 func (UnimplementedMLSClientServer) HandleExternalCommit(context.Context, *HandleExternalCommitRequest) (*HandleExternalCommitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleExternalCommit not implemented")
@@ -784,6 +798,24 @@ func _MLSClient_HandleCommit_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MLSClient_HandlePendingCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HandlePendingCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MLSClientServer).HandlePendingCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mls_client.MLSClient/HandlePendingCommit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MLSClientServer).HandlePendingCommit(ctx, req.(*HandlePendingCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MLSClient_HandleExternalCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleExternalCommitRequest)
 	if err := dec(in); err != nil {
@@ -896,6 +928,10 @@ var MLSClient_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleCommit",
 			Handler:    _MLSClient_HandleCommit_Handler,
+		},
+		{
+			MethodName: "HandlePendingCommit",
+			Handler:    _MLSClient_HandlePendingCommit_Handler,
 		},
 		{
 			MethodName: "HandleExternalCommit",

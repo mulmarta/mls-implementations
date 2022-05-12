@@ -32,6 +32,7 @@ const (
 	ActionRemoveProposal       ScriptAction = "removeProposal"
 	ActionCommit               ScriptAction = "commit"
 	ActionHandleCommit         ScriptAction = "handleCommit"
+	ActionHandlePendingCommit  ScriptAction = "handlePendingCommit"
 	ActionHandleExternalCommit ScriptAction = "handleExternalCommit"
 	ActionVerifyStateAuth      ScriptAction = "verifyStateAuth"
 	ActionStateProperties      ScriptAction = "stateProperties"
@@ -582,6 +583,29 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			Commit:   commit,
 		}
 		resp, err := client.rpc.HandleCommit(ctx(), req)
+		if err != nil {
+			return err
+		}
+
+		config.stateID[step.Actor] = resp.StateId
+
+		for i, leafNodeRef := range resp.Added {
+			config.StoreMessage(index, fmt.Sprintf("added %d", i), leafNodeRef)
+		}
+
+		for i, leafNodeRef := range resp.Removed {
+			config.StoreMessage(index, fmt.Sprintf("removed %d", i), leafNodeRef)
+		}
+
+	case ActionHandlePendingCommit:
+		client := config.ActorClients[step.Actor]
+
+		req := &pb.HandlePendingCommitRequest{
+			StateId: config.stateID[step.Actor],
+		}
+
+		resp, err := client.rpc.HandlePendingCommit(ctx(), req)
+
 		if err != nil {
 			return err
 		}

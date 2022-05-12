@@ -39,6 +39,7 @@ service MLSClient {
   
   rpc Commit(CommitRequest) returns (CommitResponse) {}
   rpc HandleCommit(HandleCommitRequest) returns (HandleCommitResponse) {}
+  rpc HandlePendingCommit(HandlePendingCommitRequest) returns (HandlePendingCommitResponse) {} 
   rpc HandleExternalCommit(HandleExternalCommitRequest) returns (HandleExternalCommitResponse) {}
 }
 
@@ -250,6 +251,17 @@ message HandleCommitRequest {
 }
 
 message HandleCommitResponse { 
+  uint32 state_id = 1;
+  repeated bytes added = 2;
+  repeated bytes removed = 3;
+}
+
+// rpc HandlePendingCommit
+message HandlePendingCommitRequest {
+  uint32 state_id = 1;
+}
+
+message HandlePendingCommitResponse { 
   uint32 state_id = 1;
   repeated bytes added = 2;
   repeated bytes removed = 3;
