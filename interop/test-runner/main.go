@@ -36,6 +36,8 @@ const (
 	ActionHandleExternalCommit ScriptAction = "handleExternalCommit"
 	ActionVerifyStateAuth      ScriptAction = "verifyStateAuth"
 	ActionStateProperties      ScriptAction = "stateProperties"
+	ActionProtect              ScriptAction = "protect"
+	ActionUnprotect            ScriptAction = "unprotect"
 
 	ScriptStateProperties = "stateProperties"
 	ActorLeader           = "leader"
@@ -71,6 +73,14 @@ type CommitStepParams struct {
 type HandleCommitStepParams struct {
 	Commit      int   `json:"commit"`
 	ByReference []int `json:"byReference"`
+}
+
+type ProtectStepParams struct {
+	ApplicationData []byte `json:"applicationData"`
+}
+
+type UnprotectStepParams struct {
+	Ciphertext int `json:"ciphertext"`
 }
 
 func (step *ScriptStep) UnmarshalJSON(data []byte) error {
@@ -555,6 +565,49 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.StoreMessage(index, "commit", resp.Commit)
 		config.StoreMessage(index, "welcome", resp.Welcome)
+
+	case ActionProtect:
+		client := config.ActorClients[step.Actor]
+		var params ProtectStepParams
+		err := json.Unmarshal(step.Raw, &params)
+		if err != nil {
+			return err
+		}
+
+		req := &pb.ProtectRequest{
+			StateId:         config.stateID[step.Actor],
+			ApplicationData: params.ApplicationData,
+		}
+		resp, err := client.rpc.Protect(ctx(), req)
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "ciphertext", resp.Ciphertext)
+
+	case ActionUnprotect:
+		client := config.ActorClients[step.Actor]
+		var params UnprotectStepParams
+		err := json.Unmarshal(step.Raw, &params)
+		if err != nil {
+			return err
+		}
+
+		ciphertext, err := config.GetMessage(params.Ciphertext, "ciphertext")
+		if err != nil {
+			return err
+		}
+
+		req := &pb.UnprotectRequest{
+			StateId:    config.stateID[step.Actor],
+			Ciphertext: ciphertext,
+		}
+		resp, err := client.rpc.Unprotect(ctx(), req)
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "applicationData", resp.ApplicationData)
 
 	case ActionHandleCommit:
 		client := config.ActorClients[step.Actor]

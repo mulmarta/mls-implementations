@@ -50,10 +50,8 @@
 {"action": "handleCommit", "actor": "actor2", "commit": 39},
 {"action": "handleCommit", "actor": "actor3", "commit": 39},
 {"action": "handlePendingCommit", "actor": "actor4"},
-{"action": "removeProposal", "actor": "actor2", "removedLeafIndex": 2},
-{"action": "commit", "actor": "actor0", "byReference": [45]},
-{"action": "handleCommit", "actor": "actor1", "commit": 46, "byReference": [45]},
-{"action": "handlePendingCommit", "actor": "actor0"}
+{"action": "protect", "actor": "actor0", "applicationData": [1, 2, 3]},
+{"action": "unprotect", "actor": "actor1", "ciphertext": 45}
         ]
       }
     }
