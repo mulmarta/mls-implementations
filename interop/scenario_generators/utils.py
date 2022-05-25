@@ -8,7 +8,7 @@ actors: a list representing consecutive leaves in the tree. actors[leaf_index] i
 
 class Group:
     def __init__(self, num_members):
-        self.actors = ['actor0']    #['actor{}'.format(i) for i in range(num_members)]
+        self.actors = ['actor0']
         self.actions = []
         self.next_free_actor = 1
 
@@ -17,6 +17,9 @@ class Group:
             self.add_actor()
     
     def add_actor(self):
+        '''
+        An arbitrary member commits adding a new actor, all members process the add, new member joins.
+        '''
         new_actor_name = "actor{}".format(self.next_free_actor)
         self.next_free_actor += 1
 
@@ -25,9 +28,11 @@ class Group:
         self.actions.append('"action": "createKeyPackage", "actor": "{}"'.format(new_actor_name))
         self.actions.append('"action": "addProposal", "actor": "{}", "keyPackage": {}'.format(committer, len(self.actions)-1))
         proposal_index = len(self.actions) - 1
-        commit_index = self.commit_and_process(committer, [proposal_index])
+        commit_index = self.commit_and_process(committer, [(proposal_index, committer)])
         self.actions.append('"action": "joinGroup", "actor": "{}", "welcome": {}'.format(new_actor_name, commit_index))
+        self.insert_new_actor(new_actor_name)
 
+    def insert_new_actor(self, new_actor_name):
         i = 0
         while i < len(self.actors):
             if self.actors[i] is None:
@@ -38,12 +43,24 @@ class Group:
             self.actors.append(new_actor_name)
 
     def commit_and_process(self, committer, proposals):
-        self.actions.append('"action": "commit", "actor": "{}"'.format(committer))
+        '''
+        Committer commits the proposals list, then all actors process.
+        '''
+        self.actions.append('"action": "commit", "actor": "{}", "byReference": {}'.format(
+            committer, 
+            [prop for prop, sender in proposals if sender != committer],
+        ))
+
         commit_index = len(self.actions) - 1
         self.actions.append('"action": "handlePendingCommit", "actor": "{}"'.format(committer))
+
         for actor in self.actors:
             if actor != committer and actor is not None:
-                self.actions.append('"action": "handleCommit", "actor": "{}", "commit": {}, "byReference": {}'.format(actor, commit_index, proposals))
+                self.actions.append('"action": "handleCommit", "actor": "{}", "commit": {}, "byReference": {}'.format(
+                    actor,
+                    commit_index,
+                    [prop for prop, sender in proposals if sender != actor],
+                ))
         return commit_index
     
     def all_actors_commit(self):
@@ -55,7 +72,7 @@ class Group:
         proposals = []
         for i in removed_actor_indices:
             if i < len(self.actors) and self.actors[i] is not None:
-                proposals.append(len(self.actions))
+                proposals.append((len(self.actions), 'actor{}'.format(committer)))
                 self.actions.append('"action": "removeProposal", "actor": "{}", "removedLeafIndex": {}'.format(committer, i))
                 self.actors[i] = None
 
@@ -65,6 +82,26 @@ class Group:
         while i >= 0 and self.actors[i] is None:
             self.actors.pop()
             i -= 1
+    
+    def propose_and_commit(self, committer, proposals):
+        props = []
+        added_actors = []
+        for proposal, sender, data in proposals:
+            if proposal == 'add':
+                new_actor_name = "actor{}".format(self.next_free_actor)
+                self.next_free_actor += 1
+                added_actors.append(new_actor_name)
+                self.actions.append('"action": "createKeyPackage", "actor": "{}"'.format(new_actor_name))
+                proposal_data = ', "keyPackage": {}'.format(len(self.actions)-1)
+            elif proposal == 'remove':
+                proposal_data = ', "removedLeafIndex": {}'.format(data)
+            elif proposal == 'update':
+                proposal_data = ''
+            props.append((len(self.actions), 'actor{}'.format(sender)))
+            self.actions.append('"action": "{}Proposal", "actor": "actor{}"{}'.format(proposal, sender, proposal_data))
+        self.commit_and_process('actor{}'.format(committer), props)
+        #for new_actor_name in added_actors:
+        #    self.insert_new_actor(new_actor_name)
 
     def get_actor_in_range(self, left, right):
         '''

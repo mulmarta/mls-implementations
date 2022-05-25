@@ -27,10 +27,11 @@ def blank_subtree(group, node_index):
 
 
 with open('config.json', 'w') as f:
-    g = Group(9)
+    g = Group(17)
     g.all_actors_commit()
-    blank_subtree(g, 5)
+    #blank_subtree(g, 5)
     blank_subtree(g, 11)
+    blank_subtree(g, 19)
     g.all_actors_commit()
     g.add_actor()
     print(g)

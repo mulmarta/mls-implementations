@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -371,6 +372,10 @@ func (config *ScriptActorConfig) GetMessage(index int, key string) ([]byte, erro
 	return message, nil
 }
 
+func (config *ScriptActorConfig) StoreInteger(index int, key string, integer uint32) {
+	config.transcript[index][key] = strconv.FormatUint(uint64(integer), 10)
+}
+
 func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 	switch step.Action {
 	case ActionCreateGroup:
@@ -642,12 +647,21 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.stateID[step.Actor] = resp.StateId
 
-		for i, leafNodeRef := range resp.Added {
-			config.StoreMessage(index, fmt.Sprintf("added %d", i), leafNodeRef)
+		for i, leafIndex := range resp.Added {
+			config.StoreInteger(index, fmt.Sprintf("added %d", i), leafIndex)
 		}
 
-		for i, leafNodeRef := range resp.Removed {
-			config.StoreMessage(index, fmt.Sprintf("removed %d", i), leafNodeRef)
+		for i, leafIndex := range resp.Updated {
+			config.StoreInteger(index, fmt.Sprintf("updated %d", i), leafIndex)
+		}
+
+		if len(resp.RemovedIndices) != len(resp.RemovedLeaves) {
+			return fmt.Errorf("Lengths of removed leaves (%d) and indices(%d) do not match.", len(resp.RemovedLeaves), len(resp.RemovedIndices))
+		}
+
+		for i := 0; i < len(resp.RemovedIndices); i++ {
+			config.StoreInteger(index, fmt.Sprintf("removedIndex %d", i), resp.RemovedIndices[i])
+			config.StoreMessage(index, fmt.Sprintf("removedLeaf %d", i), resp.RemovedLeaves[i])
 		}
 
 	case ActionHandlePendingCommit:
@@ -665,12 +679,21 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.stateID[step.Actor] = resp.StateId
 
-		for i, leafNodeRef := range resp.Added {
-			config.StoreMessage(index, fmt.Sprintf("added %d", i), leafNodeRef)
+		for i, leafIndex := range resp.Added {
+			config.StoreInteger(index, fmt.Sprintf("added %d", i), leafIndex)
 		}
 
-		for i, leafNodeRef := range resp.Removed {
-			config.StoreMessage(index, fmt.Sprintf("removed %d", i), leafNodeRef)
+		for i, leafIndex := range resp.Updated {
+			config.StoreInteger(index, fmt.Sprintf("updated %d", i), leafIndex)
+		}
+
+		if len(resp.RemovedIndices) != len(resp.RemovedLeaves) {
+			return fmt.Errorf("Lengths of removed leaves (%d) and indices(%d) do not match.", len(resp.RemovedLeaves), len(resp.RemovedIndices))
+		}
+
+		for i := 0; i < len(resp.RemovedIndices); i++ {
+			config.StoreInteger(index, fmt.Sprintf("removedIndex %d", i), resp.RemovedIndices[i])
+			config.StoreMessage(index, fmt.Sprintf("removedLeaf %d", i), resp.RemovedLeaves[i])
 		}
 
 	case ActionHandleExternalCommit:
