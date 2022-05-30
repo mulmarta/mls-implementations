@@ -23,22 +23,24 @@ import (
 type ScriptAction string
 
 const (
-	ActionCreateGroup          ScriptAction = "createGroup"
-	ActionCreateKeyPackage     ScriptAction = "createKeyPackage"
-	ActionJoinGroup            ScriptAction = "joinGroup"
-	ActionExternalJoin         ScriptAction = "externalJoin"
-	ActionPublicGroupState     ScriptAction = "publicGroupState"
-	ActionAddProposal          ScriptAction = "addProposal"
-	ActionUpdateProposal       ScriptAction = "updateProposal"
-	ActionRemoveProposal       ScriptAction = "removeProposal"
-	ActionCommit               ScriptAction = "commit"
-	ActionHandleCommit         ScriptAction = "handleCommit"
-	ActionHandlePendingCommit  ScriptAction = "handlePendingCommit"
-	ActionHandleExternalCommit ScriptAction = "handleExternalCommit"
-	ActionVerifyStateAuth      ScriptAction = "verifyStateAuth"
-	ActionStateProperties      ScriptAction = "stateProperties"
-	ActionProtect              ScriptAction = "protect"
-	ActionUnprotect            ScriptAction = "unprotect"
+	ActionCreateGroup                    ScriptAction = "createGroup"
+	ActionCreateKeyPackage               ScriptAction = "createKeyPackage"
+	ActionJoinGroup                      ScriptAction = "joinGroup"
+	ActionExternalJoin                   ScriptAction = "externalJoin"
+	ActionPublicGroupState               ScriptAction = "publicGroupState"
+	ActionAddProposal                    ScriptAction = "addProposal"
+	ActionUpdateProposal                 ScriptAction = "updateProposal"
+	ActionRemoveProposal                 ScriptAction = "removeProposal"
+	ActionExternalPSKProposal            ScriptAction = "externalPSKProposal"
+	ActionGroupContextExtensionsProposal ScriptAction = "groupContextExtensionsProposal"
+	ActionCommit                         ScriptAction = "commit"
+	ActionHandleCommit                   ScriptAction = "handleCommit"
+	ActionHandlePendingCommit            ScriptAction = "handlePendingCommit"
+	ActionHandleExternalCommit           ScriptAction = "handleExternalCommit"
+	ActionVerifyStateAuth                ScriptAction = "verifyStateAuth"
+	ActionStateProperties                ScriptAction = "stateProperties"
+	ActionProtect                        ScriptAction = "protect"
+	ActionUnprotect                      ScriptAction = "unprotect"
 
 	ScriptStateProperties = "stateProperties"
 	ActorLeader           = "leader"
@@ -64,6 +66,14 @@ type AddProposalStepParams struct {
 
 type RemoveProposalStepParams struct {
 	RemovedLeafIndex uint32 `json:"removedLeafIndex"`
+}
+
+type ExternalPSKProposalStepParams struct {
+	PSKId []byte `json:"pskId"`
+}
+
+type GroupContextExtensionsProposalStepParams struct {
+	Extensions map[int]string `json:"extensions"`
 }
 
 type CommitStepParams struct {
@@ -534,6 +544,62 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.StoreMessage(index, "proposal", resp.Proposal)
 
+	case ActionExternalPSKProposal:
+		client := config.ActorClients[step.Actor]
+		var params ExternalPSKProposalStepParams
+		err := json.Unmarshal(step.Raw, &params)
+
+		if err != nil {
+			return err
+		}
+
+		pskId := make([]byte, len(params.PSKId)+1)
+		copy(pskId, []byte{1})
+		copy(pskId[1:], params.PSKId)
+
+		req := &pb.PSKProposalRequest{
+			StateId: config.stateID[step.Actor],
+			PskId:   pskId,
+		}
+
+		resp, err := client.rpc.PSKProposal(ctx(), req)
+
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "proposal", resp.Proposal)
+
+	case ActionGroupContextExtensionsProposal:
+		client := config.ActorClients[step.Actor]
+		var params GroupContextExtensionsProposalStepParams
+		err := json.Unmarshal(step.Raw, &params)
+
+		if err != nil {
+			return err
+		}
+
+		types := make([]uint32, len(params.Extensions))
+		data := make([][]byte, len(params.Extensions))
+		for t, d := range params.Extensions {
+			types = append(types, uint32(t))
+			data = append(data, []byte(d))
+		}
+
+		req := &pb.GroupContextExtensionsProposalRequest{
+			StateId:       config.stateID[step.Actor],
+			ExtensionType: types,
+			ExtensionData: data,
+		}
+
+		resp, err := client.rpc.GroupContextExtensionsProposal(ctx(), req)
+
+		if err != nil {
+			return err
+		}
+
+		config.StoreMessage(index, "proposal", resp.Proposal)
+
 	case ActionCommit:
 		client := config.ActorClients[step.Actor]
 		var params CommitStepParams
@@ -664,6 +730,10 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			config.StoreMessage(index, fmt.Sprintf("removedLeaf %d", i), resp.RemovedLeaves[i])
 		}
 
+		for i, psk := range resp.Psks {
+			config.StoreMessage(index, fmt.Sprintf("psk %d", i), psk)
+		}
+
 	case ActionHandlePendingCommit:
 		client := config.ActorClients[step.Actor]
 
@@ -694,6 +764,10 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 		for i := 0; i < len(resp.RemovedIndices); i++ {
 			config.StoreInteger(index, fmt.Sprintf("removedIndex %d", i), resp.RemovedIndices[i])
 			config.StoreMessage(index, fmt.Sprintf("removedLeaf %d", i), resp.RemovedLeaves[i])
+		}
+
+		for i, psk := range resp.Psks {
+			config.StoreMessage(index, fmt.Sprintf("psk %d", i), psk)
 		}
 
 	case ActionHandleExternalCommit:

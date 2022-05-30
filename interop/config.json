@@ -37,12 +37,24 @@
       {"action": "updateProposal", "actor": "actor1"},
       {"action": "updateProposal", "actor": "actor1"},
       {"action": "updateProposal", "actor": "actor2"},
-      {"action": "commit", "actor": "actor0", "byReference": [28, 29, 30, 31, 32]},
+      {"action": "externalPSKProposal", "actor": "actor4", "pskId": "dGhlIFBza0lk"},
+      {"action": "groupContextExtensionsProposal", "actor": "actor4", "extensions": {"42": "bXkgbmV3IGV4dGVuc2lvbg=="}},
+      {"action": "commit", "actor": "actor0", "byReference": [28, 29, 30, 31, 32, 33, 34]},
       {"action": "handlePendingCommit", "actor": "actor0"},
-      {"action": "handleCommit", "actor": "actor1", "commit": 33, "byReference": [32]},
-      {"action": "handleCommit", "actor": "actor2", "commit": 33, "byReference": [28, 29, 30, 31]},
-      {"action": "handleCommit", "actor": "actor3", "commit": 33, "byReference": [28, 29, 30, 31, 32]},
-      {"action": "handleCommit", "actor": "actor4", "commit": 33, "byReference": [28, 29, 30, 31, 32]}
+      {"action": "handleCommit", "actor": "actor1", "commit": 35, "byReference": [32, 33, 34]},
+      {"action": "handleCommit", "actor": "actor2", "commit": 35, "byReference": [28, 29, 30, 31, 33, 34]},
+      {"action": "handleCommit", "actor": "actor3", "commit": 35, "byReference": [28, 29, 30, 31, 32, 33, 34]},
+      {"action": "handleCommit", "actor": "actor4", "commit": 35, "byReference": [28, 29, 30, 31, 32]},
+      {"action": "joinGroup", "actor": "actor5", "welcome": 35},
+      {"action": "createKeyPackage", "actor": "actor6"},
+      {"action": "addProposal", "actor": "actor0", "keyPackage": 42},
+      {"action": "commit", "actor": "actor0", "byReference": []},
+      {"action": "handlePendingCommit", "actor": "actor0"},
+      {"action": "handleCommit", "actor": "actor1", "commit": 44, "byReference": [43]},
+      {"action": "handleCommit", "actor": "actor5", "commit": 44, "byReference": [43]},
+      {"action": "handleCommit", "actor": "actor3", "commit": 44, "byReference": [43]},
+      {"action": "handleCommit", "actor": "actor4", "commit": 44, "byReference": [43]},
+      {"action": "joinGroup", "actor": "actor6", "welcome": 44}
     ]
   }
 }

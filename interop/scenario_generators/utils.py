@@ -1,4 +1,6 @@
 import tree_math
+import collections
+import base64
 
 '''
 actors: a list representing consecutive leaves in the tree. actors[leaf_index] is either
@@ -83,9 +85,10 @@ class Group:
             self.actors.pop()
             i -= 1
     
-    def propose_and_commit(self, committer, proposals):
+    def propose_and_commit(self, committer, proposals, should_succeed=True):
         props = []
         added_actors = []
+        removed_indices = []
         for proposal, sender, data in proposals:
             if proposal == 'add':
                 new_actor_name = "actor{}".format(self.next_free_actor)
@@ -95,13 +98,22 @@ class Group:
                 proposal_data = ', "keyPackage": {}'.format(len(self.actions)-1)
             elif proposal == 'remove':
                 proposal_data = ', "removedLeafIndex": {}'.format(data)
+                removed_indices.append(data)
             elif proposal == 'update':
                 proposal_data = ''
+            elif proposal == 'externalPSK':
+                proposal_data = ', "pskId": "{}"'.format(data)
+            elif proposal == 'groupContextExtensions':
+                proposal_data = ', "extensions": {{{}}}'.format(', '.join('"{}": "{}"'.format(k, v) for k, v in data.items()))
             props.append((len(self.actions), 'actor{}'.format(sender)))
             self.actions.append('"action": "{}Proposal", "actor": "actor{}"{}'.format(proposal, sender, proposal_data))
-        self.commit_and_process('actor{}'.format(committer), props)
-        #for new_actor_name in added_actors:
-        #    self.insert_new_actor(new_actor_name)
+        commit_index = self.commit_and_process('actor{}'.format(committer), props)
+        if should_succeed:
+            for removed in list(collections.OrderedDict.fromkeys(removed_indices)):
+                self.actors[removed] = None
+            for new_actor_name in list(collections.OrderedDict.fromkeys(added_actors)):
+                self.insert_new_actor(new_actor_name)
+                self.actions.append('"action": "joinGroup", "actor": "{}", "welcome": {}'.format(new_actor_name, commit_index))
 
     def get_actor_in_range(self, left, right):
         '''
@@ -123,3 +135,6 @@ class Group:
 
     def __str__(self):
         return str(self.actors)
+
+def b64string(bytes):
+    return str(base64.b64encode(bytes))[2:-1]
