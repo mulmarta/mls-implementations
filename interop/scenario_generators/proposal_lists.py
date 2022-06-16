@@ -11,8 +11,7 @@ with open('config.json', 'w') as f:
             ('update', 1, None),
             ('update', 1, None),
             ('update', 2, None),
-            ('externalPSK', 4, b64string(b'the PskId')),
-            ('groupContextExtensions', 4, {"42": b64string(b'my new extension')})
+            #('externalPSK', 4, b64string(b'the PskId')),
         ]
     )
     g.propose_and_commit(

@@ -53,7 +53,8 @@ type ScriptStep struct {
 }
 
 type JoinGroupStepParams struct {
-	Welcome int `json:"welcome"`
+	Welcome        int    `json:"welcome"`
+	WelcomeByValue []byte `json:"welcomeByByValue"`
 }
 
 type ExternalJoinStepParams struct {
@@ -65,7 +66,7 @@ type AddProposalStepParams struct {
 }
 
 type RemoveProposalStepParams struct {
-	RemovedLeafIndex uint32 `json:"removedLeafIndex"`
+	Removed uint32 `json:"removed"`
 }
 
 type ExternalPSKProposalStepParams struct {
@@ -185,7 +186,7 @@ type Client struct {
 }
 
 func ctx() context.Context {
-	c, _ := context.WithTimeout(context.Background(), time.Second*10)
+	c, _ := context.WithTimeout(context.Background(), time.Second*600)
 	return c
 }
 
@@ -423,9 +424,13 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			return err
 		}
 
-		welcome, err := config.GetMessage(params.Welcome, "welcome")
-		if err != nil {
-			return err
+		welcome := params.WelcomeByValue
+
+		if len(welcome) == 0 {
+			welcome, err = config.GetMessage(params.Welcome, "welcome")
+			if err != nil {
+				return err
+			}
 		}
 
 		txID, ok := config.transactionID[step.Actor]
@@ -438,10 +443,13 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			Welcome:          welcome,
 			EncryptHandshake: config.EncryptHandshake,
 		}
+
+		start := time.Now()
 		resp, err := client.rpc.JoinGroup(ctx(), req)
 		if err != nil {
 			return err
 		}
+		fmt.Print("\n join takes ", time.Now().Sub(start), "\n")
 
 		config.stateID[step.Actor] = resp.StateId
 
@@ -517,8 +525,8 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 		}
 
 		req := &pb.RemoveProposalRequest{
-			StateId:          config.stateID[step.Actor],
-			RemovedLeafIndex: params.RemovedLeafIndex,
+			StateId: config.stateID[step.Actor],
+			Removed: params.Removed,
 		}
 
 		resp, err := client.rpc.RemoveProposal(ctx(), req)
@@ -1013,6 +1021,7 @@ func (config *ScriptActorConfig) Run(script Script) ScriptResult {
 
 	// Run the steps to completion or error
 	for i, step := range script {
+		fmt.Print("Step ", i, " out of ", len(script), "\n")
 		err := config.RunStep(i, step)
 		if err != nil {
 			result.Error = err.Error()
