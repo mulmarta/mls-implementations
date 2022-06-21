@@ -38,3 +38,20 @@ def group_chnges(g, n):
         g.receive_app_message(a, ctx)
     for ctx in [ctxA, ctxB1, ctxB2, ctxD]:
         g.receive_app_message(c, ctx)
+
+groups = []
+
+for n in [50, 63, 64, 65]:
+    g = Group(n, "appMsgs: simpleCase")
+    m = 3
+    for sndr_list, num_msgs in [
+        ([1, n // 2, n - 2], 1000),
+        (range(1, n-1), 3),
+    ]:
+        simple_case(g, n, m, sndr_list, num_msgs)
+    group_chnges(g, n)
+    groups.append(g)
+
+
+with open('config.json', 'w') as f:
+    f.write(get_json(groups))

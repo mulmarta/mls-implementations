@@ -159,3 +159,9 @@ class Group:
 
 def b64string(bytes):
     return str(base64.b64encode(bytes))[2:-1]
+
+def get_json(groups):
+    header = '{\n  "clients": [\n    "localhost:50003"\n  ],\n  "scripts": {\n'
+    scripts = ','.join(g.get_json() for g in groups)
+    footer = '\n  }\n}'
+    return header + scripts + footer
