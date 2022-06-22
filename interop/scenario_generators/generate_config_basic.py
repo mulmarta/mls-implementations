@@ -41,7 +41,7 @@ g.propose_and_commit(
 )
 # committing multiple proposals
 g.propose_and_commit(
-    3,
+    12,
     [
         ("remove", 0, 1),
         ("remove", 2, 3),
