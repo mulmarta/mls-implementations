@@ -994,7 +994,7 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 	return nil
 }
 
-func (config *ScriptActorConfig) Run(script Script) ScriptResult {
+func (config *ScriptActorConfig) Run(script Script) (ScriptResult, error) {
 	config.stateID = map[string]uint32{}
 	config.transactionID = map[string]uint32{}
 	config.transcript = make([]map[string]string, len(script))
@@ -1027,11 +1027,11 @@ func (config *ScriptActorConfig) Run(script Script) ScriptResult {
 			result.Error = err.Error()
 			result.FailedStep = new(int)
 			*result.FailedStep = i
-			return result
+			return result, err
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func (p *ClientPool) ScriptMatrix(actors []string) []ScriptActorConfig {
@@ -1103,7 +1103,7 @@ func (p *ClientPool) AllClientsForEachSuite() []ScriptActorConfig {
 	return configs
 }
 
-func (p *ClientPool) RunScript(name string, script Script) ScriptResults {
+func (p *ClientPool) RunScript(name string, script Script) (ScriptResults, error) {
 	actors := script.Actors()
 
 	configs := p.ScriptMatrix(actors)
@@ -1113,13 +1113,17 @@ func (p *ClientPool) RunScript(name string, script Script) ScriptResults {
 	}
 
 	results := make(ScriptResults, 0, len(configs))
+	var err error
 
 	for _, config := range configs {
-		result := config.Run(script)
+		result, err_script := config.Run(script)
+		if err == nil {
+			err = err_script
+		}
 		results = append(results, result)
 	}
 
-	return results
+	return results, err
 }
 
 ///
@@ -1185,14 +1189,19 @@ func main() {
 	results := TestResults{}
 	results.TestVectors = clientPool.RunTestVectors(config.TestVectors)
 	results.Scripts = map[string]ScriptResults{}
+
 	for name, script := range config.Scripts {
-		results.Scripts[name] = clientPool.RunScript(name, script)
+		result, err_script := clientPool.RunScript(name, script)
+		results.Scripts[name] = result
+		if err == nil {
+			err = err_script
+		}
 	}
 
-	resultsJSON, err := json.MarshalIndent(results, "", "  ")
-	chk("Error marshaling results", err)
+	resultsJSON, err_marshal := json.MarshalIndent(results, "", "  ")
+	chk("Error marshaling results", err_marshal)
 	fmt.Println(string(resultsJSON))
-
+	chk("Test Failure", err)
 }
 
 func chk(message string, err error) {
