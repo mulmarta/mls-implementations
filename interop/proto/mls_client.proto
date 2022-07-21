@@ -259,6 +259,7 @@ message HandleCommitResponse {
   repeated bytes removed_leaves = 4;
   repeated uint32 updated = 5;
   repeated bytes psks = 6;
+  uint32 active = 7;
 }
 
 // rpc HandlePendingCommit
@@ -273,6 +274,7 @@ message HandlePendingCommitResponse {
   repeated bytes removed_leaves = 4;
   repeated uint32 updated = 5;
   repeated bytes psks = 6;
+  uint32 active = 7;
 }
 
 // rpc HandleExternalCommit
