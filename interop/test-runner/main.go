@@ -66,7 +66,7 @@ type AddProposalStepParams struct {
 }
 
 type RemoveProposalStepParams struct {
-	Removed string `json:"removed"`
+	Removed uint32 `json:"removed"`
 }
 
 type ExternalPSKProposalStepParams struct {
@@ -526,7 +526,7 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		req := &pb.RemoveProposalRequest{
 			StateId: config.stateID[step.Actor],
-			Removed: config.stateID[params.Removed],
+			Removed: params.Removed,
 		}
 
 		resp, err := client.rpc.RemoveProposal(ctx(), req)
@@ -721,8 +721,6 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 
 		config.stateID[step.Actor] = resp.StateId
 
-		config.StoreInteger(index, "active", resp.Active)
-
 		for i, leafIndex := range resp.Added {
 			config.StoreInteger(index, fmt.Sprintf("added %d", i), leafIndex)
 		}
@@ -758,8 +756,6 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 		}
 
 		config.stateID[step.Actor] = resp.StateId
-
-		config.StoreInteger(index, "active", resp.Active)
 
 		for i, leafIndex := range resp.Added {
 			config.StoreInteger(index, fmt.Sprintf("added %d", i), leafIndex)

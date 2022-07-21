@@ -84,7 +84,7 @@ class Group:
         for i in removed_actor_indices:
             if i < len(self.actors) and self.actors[i] is not None:
                 proposals.append((len(self.actions), 'actor{}'.format(committer)))
-                self.actions.append('"action": "removeProposal", "actor": "{}", "removed": {}'.format(committer, self.actors[i]))
+                self.actions.append('"action": "removeProposal", "actor": "{}", "removed": {}'.format(committer, i))
                 self.actors[i] = None
 
         self.commit_and_process(committer, proposals)
@@ -106,7 +106,7 @@ class Group:
                 self.actions.append('"action": "createKeyPackage", "actor": "{}"'.format(new_actor_name))
                 proposal_data = ', "keyPackage": {}'.format(len(self.actions)-1)
             elif proposal == 'remove':
-                proposal_data = ', "removed": "{}"'.format(self.actors[data])
+                proposal_data = ', "removed": {}'.format(data)
                 removed_indices.append(data)
             elif proposal == 'update':
                 proposal_data = ''
@@ -145,8 +145,8 @@ class Group:
                 return i
         return None
 
-    def get_nonempty_actors(self):
-        return [i for i in range(len(self.actors)) if self.actors[i] is not None]
+    def size(self):
+        return len(self.actors)
 
     def get_json(self):
         actions_str = ",\n      ".join(map(lambda a : "{" + a + "}", self.actions))
