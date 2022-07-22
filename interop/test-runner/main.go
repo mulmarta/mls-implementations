@@ -444,12 +444,10 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			EncryptHandshake: config.EncryptHandshake,
 		}
 
-		start := time.Now()
 		resp, err := client.rpc.JoinGroup(ctx(), req)
 		if err != nil {
 			return err
 		}
-		fmt.Print("\n join takes ", time.Now().Sub(start), "\n")
 
 		config.stateID[step.Actor] = resp.StateId
 

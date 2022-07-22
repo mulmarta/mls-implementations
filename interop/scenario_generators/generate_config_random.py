@@ -15,11 +15,11 @@ NUM_CYCLES = 30
 
 MAX_NUM_OPS = 100
 RATIO_ADDS = .3
-RATIO_REMS = .1
-RATIO_UPDS = .5
+RATIO_REMS = .3
+RATIO_UPDS = .3
 
-#seed = rnd.randint(0, sys.maxsize)
-seed = 1170625869743070381
+seed = rnd.randint(0, sys.maxsize)
+#seed = 1170625869743070381
 print("Starting random tests with rand seed {}".format(seed))
 rnd.seed(seed)
 
@@ -45,20 +45,6 @@ def get_num_ops(group_size):
         if MIN_GROUP_SIZE <= group_size + a - r and group_size + a - r < MAX_GROUP_SIZE and u < group_size - r:
             return a, r, u
     raise "Fail"
-
-'''
-g = Group(N, "Random Updates, Adds, Removes")
-# committing multiple proposals
-g.propose_and_commit(
-    0,
-    [
-        ("remove", 1, 0),
-        ("add", 1, None),
-    ]
-)
-# everyone can commit
-g.all_actors_commit()
-'''
 
 with open('config.json', 'w') as f:
     f.write(get_json([random_updates()]))
