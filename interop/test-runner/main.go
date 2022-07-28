@@ -41,6 +41,7 @@ const (
 	ActionStateProperties                ScriptAction = "stateProperties"
 	ActionProtect                        ScriptAction = "protect"
 	ActionUnprotect                      ScriptAction = "unprotect"
+	ActionStorePSK                       ScriptAction = "storePSK"
 
 	ScriptStateProperties = "stateProperties"
 	ActorLeader           = "leader"
@@ -71,6 +72,11 @@ type RemoveProposalStepParams struct {
 
 type ExternalPSKProposalStepParams struct {
 	PSKId []byte `json:"pskId"`
+}
+
+type StorePSKStepParams struct {
+	PSKId []byte `json:"pskId"`
+	PSK   []byte `json:"psk"`
 }
 
 type GroupContextExtensionsProposalStepParams struct {
@@ -559,13 +565,9 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 			return err
 		}
 
-		pskId := make([]byte, len(params.PSKId)+1)
-		copy(pskId, []byte{1})
-		copy(pskId[1:], params.PSKId)
-
 		req := &pb.PSKProposalRequest{
 			StateId: config.stateID[step.Actor],
-			PskId:   pskId,
+			PskId:   params.PSKId,
 		}
 
 		resp, err := client.rpc.PSKProposal(ctx(), req)
@@ -575,6 +577,23 @@ func (config *ScriptActorConfig) RunStep(index int, step ScriptStep) error {
 		}
 
 		config.StoreMessage(index, "proposal", resp.Proposal)
+
+	case ActionStorePSK:
+		client := config.ActorClients[step.Actor]
+		var params StorePSKStepParams
+		err := json.Unmarshal(step.Raw, &params)
+
+		if err != nil {
+			return err
+		}
+
+		req := &pb.StorePSKRequest{
+			StateId: config.stateID[step.Actor],
+			PskId:   params.PSKId,
+			Psk:     params.PSK,
+		}
+
+		client.rpc.StorePSK(ctx(), req)
 
 	case ActionGroupContextExtensionsProposal:
 		client := config.ActorClients[step.Actor]
