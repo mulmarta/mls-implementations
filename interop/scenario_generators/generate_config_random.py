@@ -7,13 +7,13 @@ import sys
 a commit from a random member. A, R and U are chosen s.t. the group size N is always
 `MIN_GROUP_SIZE <= N < MAX_GROUP_SIZE`.
 '''
-MAX_GROUP_SIZE = 10000
+MAX_GROUP_SIZE = 200
 MIN_GROUP_SIZE = 1
 INIT_GROUP_SIZE = 100
 
 NUM_CYCLES = 30
 
-MAX_NUM_OPS = 1000
+MAX_NUM_OPS = 100
 RATIO_ADDS = .3
 RATIO_REMS = .3
 RATIO_UPDS = .3

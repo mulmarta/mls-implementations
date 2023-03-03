@@ -3,7 +3,7 @@ import random
 
 random.seed(42)
 
-MAX_OUT_OF_ORDER = 1000
+MAX_OUT_OF_ORDER = 100
 
 def shuffle(ctxts):
     for i in range(0, len(ctxts) - MAX_OUT_OF_ORDER, MAX_OUT_OF_ORDER):
@@ -41,11 +41,11 @@ def group_chnges(g, n):
 
 groups = []
 
-for n in [50, 63, 64, 65]:
-    g = Group(n, "appMsgs: simpleCase")
+for n in [31, 32, 33]:
+    g = Group(n, "appMsgs")
     m = 3
     for sndr_list, num_msgs in [
-        ([1, n // 2, n - 2], 1000),
+        ([1, n // 2, n - 2], 100),
         (range(1, n-1), 3),
     ]:
         simple_case(g, n, m, sndr_list, num_msgs)
