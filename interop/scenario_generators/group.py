@@ -69,7 +69,7 @@ class Group:
                 self.actions.append('"action": "handleCommit", "actor": "{}", "commit": {}, "byReference": {}'.format(
                     self.actors[actor],
                     commit_index,
-                    [prop for prop, sender in proposals if sender != actor],
+                    [prop for prop, sender in proposals],
                 ))
         return commit_index
     
