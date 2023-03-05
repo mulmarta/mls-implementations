@@ -46,7 +46,7 @@ class Group:
         if i == len(self.actors):
             self.actors.append(new_actor_name)
 
-    def commit_and_process(self, committer, proposals):
+    def commit_and_process(self, committer, proposals, removed = set()):
         '''
         Committer commits the proposals list, then all actors process.
         '''
@@ -55,13 +55,16 @@ class Group:
 
         self.actions.append('"action": "commit", "actor": "{}", "byReference": {}'.format(
             self.actors[committer],
-            [prop for prop, sender in proposals if sender != committer],
+            [prop for prop, sender in proposals],
         ))
 
         commit_index = len(self.actions) - 1
         self.actions.append('"action": "handlePendingCommit", "actor": "{}"'.format(self.actors[committer]))
 
         for actor in range(len(self.actors)):
+            if actor in removed:
+                continue
+
             if actor != committer and self.actors[actor] is not None:
                 self.actions.append('"action": "handleCommit", "actor": "{}", "commit": {}, "byReference": {}'.format(
                     self.actors[actor],
@@ -97,7 +100,7 @@ class Group:
     def propose_and_commit(self, committer, proposals, should_succeed=True):
         props = []
         added_actors = []
-        removed_indices = []
+        removed_indices = set()
         for proposal, sender, data in proposals:
             if proposal == 'add':
                 new_actor_name = "actor{}".format(self.next_free_actor)
@@ -107,7 +110,7 @@ class Group:
                 proposal_data = ', "keyPackage": {}'.format(len(self.actions)-1)
             elif proposal == 'remove':
                 proposal_data = ', "removed": "{}"'.format(self.actors[data])
-                removed_indices.append(data)
+                removed_indices.add(data)
             elif proposal == 'update':
                 proposal_data = ''
             elif proposal == 'externalPSK':
@@ -116,9 +119,9 @@ class Group:
                 proposal_data = ', "extensions": {{{}}}'.format(', '.join('"{}": "{}"'.format(k, v) for k, v in data.items()))
             props.append((len(self.actions), sender))
             self.actions.append('"action": "{}Proposal", "actor": "{}"{}'.format(proposal, self.actors[sender], proposal_data))
-        commit_index = self.commit_and_process(committer, props)
+        commit_index = self.commit_and_process(committer, props, removed_indices)
         if should_succeed:
-            for removed in list(collections.OrderedDict.fromkeys(removed_indices)):
+            for removed in removed_indices:
                 self.actors[removed] = None
             for new_actor_name in list(collections.OrderedDict.fromkeys(added_actors)):
                 self.insert_new_actor(new_actor_name)
